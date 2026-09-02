@@ -113,7 +113,7 @@ done
 
 ######################### Config ###########################
 
-RELEASE_VERSION='2025.Q4'
+RELEASE_VERSION='2026.Q3'
 ProductName="GLOBAL_DQ_DATA"
 
 # Uses the location of the .sh file 
