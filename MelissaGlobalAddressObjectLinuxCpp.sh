@@ -1,7 +1,43 @@
 #!/bin/bash
 
-# Name:    MelissaGlobalAddressObjectLinuxCpp
-# Purpose: Use the MelissaUpdater to make the MelissaGlobalAddressObjectLinuxCpp code usable
+# MelissaGlobalAddressObjectLinuxCpp
+#
+# Downloads the required components and then builds and runs MelissaGlobalAddressObjectLinuxCpp.
+#
+# This script uses the Melissa Updater to fetch the data file(s), the shared object(s), and
+# the C++ headers, verifies the shared object(s) and headers arrived, then builds the project
+# with make and runs it against the supplied address.
+#
+# Overall flow:
+#   1. Read parameters / prompt for the license and data path.
+#   2. Download the data file(s) into the data folder, the shared object(s) into the Build
+#      folder, and the C++ headers into the project folder via the Melissa Updater.
+#   3. Confirm the shared object(s) and headers are present (data files are not checked).
+#   4. Build with make, then run it (single test address or interactive).
+#
+# Options:
+#   --addressLine1 <value>       First address line to verify.
+#   --addressLine2 <value>       Second address line to verify.
+#   --addressLine3 <value>       Third address line to verify.
+#   --locality <value>           Locality (city) for the address to verify.
+#   --administrativeArea <value> Administrative area (state/province) to verify.
+#   --postalCode <value>         Postal code for the address to verify.
+#   --country <value>            Country for the address to verify.
+#   --dataPath <value>  Path to an existing data files directory. If omitted, the script
+#                       prompts for a path; pressing Enter at that prompt skips it and
+#                       downloads the data files into the project's Data folder via the
+#                       Melissa Updater. A path that does not exist aborts the script.
+#   --license <value>   License string. Resolved in this order:
+#                         1. This option.
+#                         2. An interactive prompt, if the option was not supplied.
+#                         3. The MD_LICENSE environment variable, if the prompt was left blank.
+#                       Note that the environment variable is the last resort, not the first:
+#                       running without --license always prompts, even when MD_LICENSE is set.
+#   --quiet             Suppresses the Melissa Updater console output during downloads.
+#
+# Examples:
+#   ./MelissaGlobalAddressObjectLinuxCpp.sh --license "your-license"
+#   ./MelissaGlobalAddressObjectLinuxCpp.sh --addressLine1 "Cäcilienstr. 42" --locality "Köln" --postalCode "50667" --country "Germany" --license "your-license"
 
 ######################### Constants ##########################
 
@@ -113,6 +149,7 @@ done
 
 ######################### Config ###########################
 
+# Product release the updater pulls files for
 RELEASE_VERSION='2026.Q3'
 ProductName="GLOBAL_DQ_DATA"
 
@@ -143,7 +180,7 @@ then
     exit 1
 fi
 
-# Config variables for download file(s)
+# Shared object(s) and headers needed to build and run the example
 Config1_FileName="libmdGlobalAddr.so"
 Config1_ReleaseVersion=$RELEASE_VERSION
 Config1_OS="LINUX"
@@ -188,6 +225,7 @@ Config6_Type="INTERFACE"
 
 # ######################## Functions #########################
 
+# Download the product data file(s) into $DataPath via the Melissa Updater.
 DownloadDataFiles()
 {
     printf "============================== MELISSA UPDATER ============================\n"
@@ -203,6 +241,8 @@ DownloadDataFiles()
     printf "Melissa Updater finished downloading data file(s)!\n"
 }
 
+# Download the shared object(s) into the Build folder and the C++ headers into
+# the project folder.
 DownloadSO() 
 {
     printf "\nMELISSA UPDATER IS DOWNLOADING SO(S)...\n"
@@ -320,6 +360,7 @@ DownloadSO()
     fi
 }
 
+# Verify the expected shared object(s) and headers landed in their target folders
 CheckSOs() 
 {
     printf "\nDouble checking SO file(s) were downloaded...\n"
@@ -424,6 +465,7 @@ printf "\nAll file(s) have been downloaded/updated!\n"
 
 # Start program
 # Build project
+# Point the makefile's LDFLAGS at the Build folder, then compile with make.
 printf "\n=============================== BUILD PROJECT =============================\n"
 
 # Setting the path to the lib in the makefile
@@ -441,6 +483,7 @@ cd ..
 export LD_LIBRARY_PATH=$BuildPath
 
 # Run Project
+# No address supplied -> run interactively; otherwise pass the address in.
 if [ -z "$addressLine1" ] && [ -z "$addressLine2" ] && [ -z "$addressLine3" ] && [ -z "$locality" ] && [ -z "$administrativeArea" ] && [ -z "$postalCode" ] && [ -z "$country" ];
 then
     $BuildPath/MelissaGlobalAddressObjectLinuxCpp --license $license --dataPath $DataPath
